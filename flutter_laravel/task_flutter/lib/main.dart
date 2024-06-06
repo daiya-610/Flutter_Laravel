@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models/task.dart';
 import 'services/api_service.dart';
+import 'screens/task_detail_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -27,6 +28,7 @@ class TaskListScreen extends StatefulWidget {
 class _TaskListScreenState extends State<TaskListScreen> {
   late Future<List<Task>> futureTasks;
   final ApiService apiService = ApiService();
+  String query = '';
 
   @override
   void initState() {
@@ -34,11 +36,39 @@ class _TaskListScreenState extends State<TaskListScreen> {
     futureTasks = apiService.getTasks();
   }
 
+  void _searchTasks(String query) {
+    setState(() {
+      this.query = query;
+      futureTasks = apiService.getTasks().then((tasks) {
+        return tasks.where((task) {
+          return task.title.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Task Manager'),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(48.0),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'タスクを検索する',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              onChanged: _searchTasks,
+            ),
+          ),
+        ),
       ),
       body: FutureBuilder<List<Task>>(
         future: futureTasks,
@@ -68,7 +98,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       },
                     ),
                     onTap: () {
-                      _showEditTaskDialog(task);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TaskDetailScreen(task: task),
+                        ),
+                      );
                     },
                     onLongPress: () {
                       apiService.deleteTask(task.id);
