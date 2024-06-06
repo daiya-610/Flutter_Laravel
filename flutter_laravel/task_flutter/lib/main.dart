@@ -43,36 +43,44 @@ class _TaskListScreenState extends State<TaskListScreen> {
       body: FutureBuilder<List<Task>>(
         future: futureTasks,
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No tasks found'));
+          } else {
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 Task task = snapshot.data![index];
-                return ListTile(
-                  title: Text(task.title),
-                  subtitle: Text(task.description),
-                  trailing: Checkbox(
-                    value: task.isCompleted,
-                    onChanged: (bool? value) {
+                return Card(
+                  child: ListTile(
+                    title: Text(task.title),
+                    subtitle: Text(task.description),
+                    trailing: Checkbox(
+                      value: task.isCompleted,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          task.isCompleted = value!;
+                          apiService.updateTask(task);
+                        });
+                      },
+                    ),
+                    onTap: () {
+                      _showEditTaskDialog(task);
+                    },
+                    onLongPress: () {
+                      apiService.deleteTask(task.id);
                       setState(() {
-                        task.isCompleted = value!;
-                        apiService.updateTask(task);
+                        futureTasks = apiService.getTasks();
                       });
                     },
                   ),
-                  onLongPress: () {
-                    apiService.deleteTask(task.id);
-                    setState(() {
-                      futureTasks = apiService.getTasks();
-                    });
-                  },
                 );
               },
             );
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
           }
-          return Center(child: CircularProgressIndicator());
         },
       ),
       floatingActionButton: FloatingActionButton(
@@ -85,6 +93,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   void _showAddTaskDialog() {
     final _titleController = TextEditingController();
     final _descriptionController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) {
@@ -118,21 +127,62 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   description: _descriptionController.text,
                   isCompleted: false,
                 );
-                ApiService apiService = ApiService();
                 apiService.createTask(newTask).then((task) {
-                  if (mounted) {
-                    apiService.getTasks().then((tasks) {
-                      setState(() {
-                        futureTasks = Future.value(tasks);
-                      });
-                      Navigator.of(context).pop();
-                    });
-                  }
-                }).catchError((error) {
-                  // エラーハンドリングをここに追加
+                  setState(() {
+                    futureTasks = apiService.getTasks();
+                  });
+                  Navigator.of(context).pop();
                 });
               },
               child: Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditTaskDialog(Task task) {
+    final _titleController = TextEditingController(text: task.title);
+    final _descriptionController = TextEditingController(text: task.description);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Edit Task'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(labelText: 'Title'),
+              ),
+              TextField(
+                controller: _descriptionController,
+                decoration: InputDecoration(labelText: 'Description'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                task.title = _titleController.text;
+                task.description = _descriptionController.text;
+                apiService.updateTask(task).then((_) {
+                  setState(() {
+                    futureTasks = apiService.getTasks();
+                  });
+                  Navigator.of(context).pop();
+                });
+              },
+              child: Text('Save'),
             ),
           ],
         );
