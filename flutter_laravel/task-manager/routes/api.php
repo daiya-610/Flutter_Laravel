@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,5 +23,12 @@ Route::middleware('api')->group(function () {
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
 });
 
+
+Route::post('login', [AuthController::class, 'login']);
+Route::post('register', [AuthController::class, 'register']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::apiResource('tasks', TaskController::class);
+});
 
 Route::apiResource('tasks', TaskController::class);
