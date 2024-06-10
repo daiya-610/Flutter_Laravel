@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'models/task.dart';
 import 'services/api_service.dart';
 import 'screens/task_detail_screen.dart';
+import 'screens/register_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -44,6 +45,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _navigateToRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => RegisterScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,6 +75,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ElevatedButton(
               onPressed: _login,
               child: Text('Login'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _navigateToRegister,
+              child: Text('Register'),
             ),
           ],
         ),

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/task.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api/tasks';
+  static const String baseUrl = 'http://127.0.0.1:8000/api';
   String? _token;
 
   Future<void> login(String email, String password) async {
